@@ -7,9 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "26DirectX", "26DirectX\26Di
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lecture01", "Lecture01\Lecture01.vcxproj", "{F3B21CCF-8A24-4284-ABDA-2F0C19DD3B79}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lecture01-glfw", "Lecture01-glfw\Lecture01-glfw.vcxproj", "{D305AFB1-4EBF-4048-92D2-256FCBFF8298}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lecture01-glfw_DX", "Lecture01-glfw\Lecture01-glfw.vcxproj", "{D305AFB1-4EBF-4048-92D2-256FCBFF8298}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lecture01-glfw_GL", "Lecture01-glfw_GL\Lecture01-glfw_GL.vcxproj", "{7CEEF2AC-BE63-4409-8CC0-58DF0F3C2214}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lecture01-win32_DX", "Lecture01-win32_DX\Lecture01-win32_DX.vcxproj", "{4C2132FC-229A-49A8-8779-5DF51720D5F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,6 +53,14 @@ Global
 		{7CEEF2AC-BE63-4409-8CC0-58DF0F3C2214}.Release|x64.Build.0 = Release|x64
 		{7CEEF2AC-BE63-4409-8CC0-58DF0F3C2214}.Release|x86.ActiveCfg = Release|Win32
 		{7CEEF2AC-BE63-4409-8CC0-58DF0F3C2214}.Release|x86.Build.0 = Release|Win32
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Debug|x64.ActiveCfg = Debug|x64
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Debug|x64.Build.0 = Debug|x64
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Debug|x86.ActiveCfg = Debug|Win32
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Debug|x86.Build.0 = Debug|Win32
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Release|x64.ActiveCfg = Release|x64
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Release|x64.Build.0 = Release|x64
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Release|x86.ActiveCfg = Release|Win32
+		{4C2132FC-229A-49A8-8779-5DF51720D5F1}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
