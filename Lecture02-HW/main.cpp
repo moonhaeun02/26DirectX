@@ -120,10 +120,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         else {
             // (2) 업데이트 단계: 여기서 캐릭터의 위치나 로직을 계산함
-            if (GetAsyncKeyState(VK_LEFT) & 0x8000)  g_GameContext.posX -= 0.0025f; // 가로 1픽셀
-            if (GetAsyncKeyState(VK_RIGHT) & 0x8000) g_GameContext.posX += 0.0025f;
-            if (GetAsyncKeyState(VK_UP) & 0x8000)    g_GameContext.posY += 0.0033f; // 세로 1픽셀
-            if (GetAsyncKeyState(VK_DOWN) & 0x8000)  g_GameContext.posY -= 0.0033f;
+            if (GetAsyncKeyState(VK_LEFT) & 0x8000)  g_GameContext.posX -= 0.01f;
+            if (GetAsyncKeyState(VK_RIGHT) & 0x8000) g_GameContext.posX += 0.01f;
+            if (GetAsyncKeyState(VK_UP) & 0x8000)    g_GameContext.posY += 0.01f;
+            if (GetAsyncKeyState(VK_DOWN) & 0x8000)  g_GameContext.posY -= 0.01f;
 
             // (3) 출력 단계: 변한 데이터를 바탕으로 화면에 그림
             Vertex currentVertices[] = {
@@ -163,7 +163,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             g_pImmediateContext->Draw(6, 0);
 
             // 화면 교체 (프론트 버퍼와 백 버퍼 스왑)
-            g_pSwapChain->Present(0, 0);
+            g_pSwapChain->Present(1, 0);
 
             // 임시 버퍼 메모리 해제
             if (pTempVB) pTempVB->Release();
