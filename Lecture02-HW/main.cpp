@@ -110,7 +110,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_pd3dDevice->CreateInputLayout(layout, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &pInputLayout);
     vsBlob->Release(); psBlob->Release(); // 컴파일용 임시 메모리 해제
 
-    // --- [5. 정석 게임 루프] ---
+    // --- [4. 정석 게임 루프] ---
     MSG msg = { 0 };
     while (WM_QUIT != msg.message) {
         // (1) 입력 단계: PeekMessage는 메시지가 없어도 바로 리턴함 (Non-blocking)
@@ -170,7 +170,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
     }
 
-    // --- [6. 자원 해제 (Release)] ---
+    // --- [5. 자원 해제 (Release)] ---
     // 생성(Create)한 모든 객체는 프로그램 종료 전 반드시 Release 해야 함.
     // 생성의 역순으로 해제하는 것이 관례임.
     if (pInputLayout) pInputLayout->Release();
