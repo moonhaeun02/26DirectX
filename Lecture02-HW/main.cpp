@@ -105,9 +105,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // 4. 정점 버퍼 생성 (삼각형 데이터)
     Vertex vertices[] = {
-        {  0.0f,  0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        {  0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
-        { -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        {  0.0f, -0.6f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        { -0.4f,  0.3f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        {  0.4f,  0.3f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        {  0.0f,  0.6f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        {  0.4f, -0.3f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { -0.4f, -0.3f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
     };
     ID3D11Buffer* pVBuffer;
     D3D11_BUFFER_DESC bd = { sizeof(vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
@@ -146,7 +149,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             g_pImmediateContext->PSSetShader(pShader, nullptr, 0);
 
             // 최종 그리기
-            g_pImmediateContext->Draw(3, 0);
+            g_pImmediateContext->Draw(6, 0);
 
             // 화면 교체 (프론트 버퍼와 백 버퍼 스왑)
             g_pSwapChain->Present(0, 0);
