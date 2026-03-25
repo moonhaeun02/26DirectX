@@ -28,6 +28,13 @@ struct Vertex {
     float r, g, b, a;
 };
 
+struct GameContext {
+    float posX = 0.0f; // 별의 중심 X 위치
+    float posY = 0.0f; // 별의 중심 Y 위치
+};
+
+GameContext g_GameContext;
+
 // HLSL (High-Level Shading Language) 소스
 const char* shaderSource = R"(
 struct VS_INPUT { float3 pos : POSITION; float4 col : COLOR; };
@@ -103,20 +110,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_pd3dDevice->CreateInputLayout(layout, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &pInputLayout);
     vsBlob->Release(); psBlob->Release(); // 컴파일용 임시 메모리 해제
 
-    // 4. 정점 버퍼 생성 (삼각형 데이터)
-    Vertex vertices[] = {
-        {  0.0f, -0.6f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        { -0.4f,  0.3f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
-        {  0.4f,  0.3f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-        {  0.0f,  0.6f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        {  0.4f, -0.3f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
-        { -0.4f, -0.3f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
-    };
-    ID3D11Buffer* pVBuffer;
-    D3D11_BUFFER_DESC bd = { sizeof(vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
-    D3D11_SUBRESOURCE_DATA initData = { vertices, 0, 0 };
-    g_pd3dDevice->CreateBuffer(&bd, &initData, &pVBuffer);
-
     // --- [5. 정석 게임 루프] ---
     MSG msg = { 0 };
     while (WM_QUIT != msg.message) {
@@ -127,9 +120,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         else {
             // (2) 업데이트 단계: 여기서 캐릭터의 위치나 로직을 계산함
-            // (과제: GetAsyncKeyState 등을 써서 posX, posY를 변경하셈)
+            if (GetAsyncKeyState(VK_LEFT) & 0x8000)  g_GameContext.posX -= 0.0025f; // 가로 1픽셀
+            if (GetAsyncKeyState(VK_RIGHT) & 0x8000) g_GameContext.posX += 0.0025f;
+            if (GetAsyncKeyState(VK_UP) & 0x8000)    g_GameContext.posY += 0.0033f; // 세로 1픽셀
+            if (GetAsyncKeyState(VK_DOWN) & 0x8000)  g_GameContext.posY -= 0.0033f;
 
             // (3) 출력 단계: 변한 데이터를 바탕으로 화면에 그림
+            Vertex currentVertices[] = {
+                {  0.0f + g_GameContext.posX,  0.6f + g_GameContext.posY, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+                {  0.4f + g_GameContext.posX, -0.3f + g_GameContext.posY, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+                { -0.4f + g_GameContext.posX, -0.3f + g_GameContext.posY, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+                {  0.0f + g_GameContext.posX, -0.6f + g_GameContext.posY, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+                { -0.4f + g_GameContext.posX,  0.3f + g_GameContext.posY, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+                {  0.4f + g_GameContext.posX,  0.3f + g_GameContext.posY, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+            };
+
+            // 바뀐 좌표를 담을 임시 버퍼 생성
+            ID3D11Buffer* pTempVB = nullptr;
+            D3D11_BUFFER_DESC bd = { sizeof(currentVertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
+            D3D11_SUBRESOURCE_DATA initData = { currentVertices, 0, 0 };
+            g_pd3dDevice->CreateBuffer(&bd, &initData, &pTempVB);
+
             float clearColor[] = { 0.1f, 0.2f, 0.3f, 1.0f };
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, clearColor);
 
@@ -140,7 +151,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             g_pImmediateContext->IASetInputLayout(pInputLayout);
             UINT stride = sizeof(Vertex), offset = 0;
-            g_pImmediateContext->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+            g_pImmediateContext->IASetVertexBuffers(0, 1, &pTempVB, &stride, &offset);
 
             // Primitive Topology 설정: 삼각형 리스트로 연결하라!
             g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -153,13 +164,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             // 화면 교체 (프론트 버퍼와 백 버퍼 스왑)
             g_pSwapChain->Present(0, 0);
+
+            // 임시 버퍼 메모리 해제
+            if (pTempVB) pTempVB->Release();
         }
     }
 
     // --- [6. 자원 해제 (Release)] ---
     // 생성(Create)한 모든 객체는 프로그램 종료 전 반드시 Release 해야 함.
     // 생성의 역순으로 해제하는 것이 관례임.
-    if (pVBuffer) pVBuffer->Release();
     if (pInputLayout) pInputLayout->Release();
     if (vShader) vShader->Release();
     if (pShader) pShader->Release();
