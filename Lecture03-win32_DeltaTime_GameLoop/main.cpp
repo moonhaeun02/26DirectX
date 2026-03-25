@@ -99,30 +99,25 @@ void Render(const GameObject* player, float fps) {
 int main() {
     GameObject player = { 100.0f, 100.0f, 200.0f };
     InputContext input = { 0 };
-    bool isRunning = true;
+    int isRunning = 1;
 
     // --- [타이머 초기화: auto 미사용] ---
     // high_resolution_clock 내부에 정의된 time_point 타입을 직접 명시함.
     std::chrono::high_resolution_clock::time_point prevTime = std::chrono::high_resolution_clock::now();
 
-    while (isRunning) {
+    while (!input.isExit) {
         // A. DeltaTime 계산
         std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-
-        // 두 시점의 차이를 구함 (초 단위 float으로 캐스팅)
-        std::chrono::duration<float> elapsed = currentTime - prevTime;
+        std::chrono::duration<float> elapsed = currentTime - prevTime; // 두 시점의 차이를 구함 (초 단위 float으로 캐스팅)
         float dt = elapsed.count();
-
         prevTime = currentTime;
 
         // B. 루프 실행
         ProcessInput(&input);
-        if (input.isExit) break;
-
         Update(&player, &input, dt);
         Render(&player, 1.0f / dt);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));  // 1ms 라도 쉬어서 CPU가 버닝하는것을 막음
     }
 
     return 0;
