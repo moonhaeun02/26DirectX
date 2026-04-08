@@ -90,6 +90,61 @@ public:
     }
 };
 
+class TriangleRenderer : public Component {
+public:
+    ID3D11Buffer* pVertexBuffer = nullptr;
+    float r, g, b;
+
+    TriangleRenderer(float red, float green, float blue) : r(red), g(green), b(blue) {}
+
+    void Start() override {
+        D3D11_BUFFER_DESC bd = {};
+        bd.Usage = D3D11_USAGE_DYNAMIC;
+        bd.ByteWidth = sizeof(Vertex) * 3;
+        bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+        g_pd3dDevice->CreateBuffer(&bd, nullptr, &pVertexBuffer);
+    }
+
+    void Update(float dt) override {
+        // PlayerControl에서 처리
+    }
+
+    void Render() override {
+        if (!pVertexBuffer) return;
+
+        // 정점 버퍼 업데이트
+        D3D11_MAPPED_SUBRESOURCE mappedData;
+        g_pImmediateContext->Map(pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedData);
+
+        Vertex* vertices = (Vertex*)mappedData.pData;
+        float ox = pOwner->x;
+        float oy = pOwner->y;
+
+        // 삼각형 정점
+        vertices[0] = { ox + 0.0f,  oy + 0.1f,  0.5f, r, g, b, 1.0f }; // 위
+        vertices[1] = { ox + 0.1f,  oy - 0.1f,  0.5f, r, g, b, 1.0f }; // 우측 아래
+        vertices[2] = { ox - 0.1f,  oy - 0.1f,  0.5f, r, g, b, 1.0f }; // 좌측 아래
+
+        g_pImmediateContext->Unmap(pVertexBuffer, 0);
+
+        // 렌더링 파이프라인
+        UINT stride = sizeof(Vertex), offset = 0;
+        g_pImmediateContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &stride, &offset);
+        g_pImmediateContext->IASetInputLayout(g_pInputLayout);
+        g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
+        g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
+
+        g_pImmediateContext->Draw(3, 0);
+    }
+
+    ~TriangleRenderer() {
+        if (pVertexBuffer) pVertexBuffer->Release();
+    }
+};
+
 std::vector<GameObject*> g_GameWorld;
 
 // 메세지 처리 함수
