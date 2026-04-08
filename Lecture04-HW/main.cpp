@@ -71,12 +71,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // 게임 루프
     MSG msg = { 0 };
+    auto prevTime = std::chrono::high_resolution_clock::now();
+    float deltaTime = 0.0f;
+
     while (WM_QUIT != msg.message) {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
         else {
+            // DeltaTime 계산
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            deltaTime = std::chrono::duration<float>(currentTime - prevTime).count();
+            prevTime = currentTime;
+
             // 렌더링
             float clearColor[] = { 0.1f, 0.2f, 0.3f, 1.0f };
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, clearColor);
