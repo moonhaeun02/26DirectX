@@ -173,6 +173,12 @@ public:
     void Update(float dt) override {
         pOwner->x += velocityX * speed * dt;
         pOwner->y += velocityY * speed * dt;
+
+        // NDC 좌표 범위 제한 (-1.0 ~ 1.0)
+        if (pOwner->x > 1.0f) pOwner->x = 1.0f;
+        if (pOwner->x < -1.0f) pOwner->x = -1.0f;
+        if (pOwner->y > 1.0f) pOwner->y = 1.0f;
+        if (pOwner->y < -1.0f) pOwner->y = -1.0f;
     }
 };
 
@@ -303,9 +309,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // F키 전체화면 토글
             static bool fWasPressed = false;
             bool fIsPressed = (GetAsyncKeyState('F') & 0x8000);
+
             if (fIsPressed && !fWasPressed) {
                 g_Config.IsFullscreen = !g_Config.IsFullscreen;
+ 
                 g_pSwapChain->SetFullscreenState(g_Config.IsFullscreen, nullptr);
+
+                // 렌더링 오류 방지
+                RebuildVideoResources(hWnd);
+
+                std::cout << (g_Config.IsFullscreen ? "전체 화면 모드" : "창 모드") << " 전환 완료" << std::endl;
             }
             fWasPressed = fIsPressed;
 
