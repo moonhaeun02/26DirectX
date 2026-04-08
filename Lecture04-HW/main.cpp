@@ -145,6 +145,34 @@ public:
     }
 };
 
+class PlayerControl : public Component {
+public:
+    float velocityX = 0.0f, velocityY = 0.0f;
+    float speed;
+    int upKey, downKey, leftKey, rightKey;
+
+    PlayerControl(int u, int d, int l, int r, float s)
+        : upKey(u), downKey(d), leftKey(l), rightKey(r), speed(s) {
+    }
+
+    void Start() override {}
+
+    void Input() override {
+        velocityX = 0.0f;
+        velocityY = 0.0f;
+
+        if (GetAsyncKeyState(upKey) & 0x8000)    velocityY = 1.0f;
+        if (GetAsyncKeyState(downKey) & 0x8000)  velocityY = -1.0f;
+        if (GetAsyncKeyState(leftKey) & 0x8000)  velocityX = -1.0f;
+        if (GetAsyncKeyState(rightKey) & 0x8000) velocityX = 1.0f;
+    }
+
+    void Update(float dt) override {
+        pOwner->x += velocityX * speed * dt;
+        pOwner->y += velocityY * speed * dt;
+    }
+};
+
 std::vector<GameObject*> g_GameWorld;
 
 // 메세지 처리 함수
