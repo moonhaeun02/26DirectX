@@ -240,6 +240,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     vsBlob->Release();
     psBlob->Release();
 
+    GameObject* player1 = new GameObject("Player1", -0.5f, 0.0f);
+    player1->AddComponent(new PlayerControl(VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, 1.5f));
+    player1->AddComponent(new TriangleRenderer(1.0f, 0.0f, 0.0f)); // 빨간색
+    g_GameWorld.push_back(player1);
+
+    GameObject* player2 = new GameObject("Player2", 0.5f, 0.0f);
+    player2->AddComponent(new PlayerControl('W', 'S', 'A', 'D', 1.5f));
+    player2->AddComponent(new TriangleRenderer(0.0f, 0.0f, 1.0f)); // 파란색
+    g_GameWorld.push_back(player2);
+
     // 게임 루프
     MSG msg = { 0 };
     auto prevTime = std::chrono::high_resolution_clock::now();
