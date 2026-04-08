@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{81cb4d1e-862d-43c4-912e-6b11af799e0f}</ProjectGuid>
-    <RootNamespace>Lecture03win32DeltaTimeGameLoop</RootNamespace>
+    <ProjectGuid>{3b4be947-9fe0-4cf8-997b-4c7154dbf20c}</ProjectGuid>
+    <RootNamespace>Lecture05ShaderCompile</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

@@ -17,9 +17,12 @@
   <ItemGroup>
     <None Include="HW.md" />
   </ItemGroup>
+<<<<<<< HEAD
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
+=======
+>>>>>>> upstream/master
 </Project>
