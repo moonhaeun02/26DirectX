@@ -11,6 +11,17 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
+// 전역 변수
+ID3D11Device* g_pd3dDevice = nullptr;
+ID3D11DeviceContext* g_pImmediateContext = nullptr;
+IDXGISwapChain* g_pSwapChain = nullptr;
+ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
+
+struct VideoConfig {
+    int Width = 800;
+    int Height = 600;
+} g_Config;
+
 // 메세지 처리 함수
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_DESTROY) {
@@ -36,6 +47,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top,
         nullptr, nullptr, hInstance, nullptr);
     ShowWindow(hWnd, nCmdShow);
+    
+    // DirectX 11 초기화
+    DXGI_SWAP_CHAIN_DESC sd = {};
+    sd.BufferCount = 1;
+    sd.BufferDesc.Width = g_Config.Width;
+    sd.BufferDesc.Height = g_Config.Height;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = hWnd;
+    sd.SampleDesc.Count = 1;
+    sd.Windowed = TRUE;
+
+    // 장치, 스왑체인 생성
+    D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0,
+        D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, nullptr, &g_pImmediateContext);
+
+    // 렌더타겟뷰 설정
+    ID3D11Texture2D* pBackBuffer = nullptr;
+    g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
+    pBackBuffer->Release();
 
     // 메세지 루프
     MSG msg = { 0 };
