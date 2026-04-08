@@ -23,6 +23,9 @@ ID3D11InputLayout* g_pInputLayout = nullptr;
 struct VideoConfig {
     int Width = 800;
     int Height = 600;
+    bool IsFullscreen = false;
+    bool NeedsResize = false;
+    int VSync = 1;
 } g_Config;
 
 struct Vertex {
@@ -175,6 +178,28 @@ public:
 
 std::vector<GameObject*> g_GameWorld;
 
+void RebuildVideoResources(HWND hWnd) {
+    if (!g_pSwapChain) return;
+    if (g_pRenderTargetView) {
+        g_pRenderTargetView->Release();
+        g_pRenderTargetView = nullptr;
+    }
+
+    g_pSwapChain->ResizeBuffers(0, g_Config.Width, g_Config.Height, DXGI_FORMAT_UNKNOWN, 0);
+
+    ID3D11Texture2D* pBackBuffer = nullptr;
+    g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&pBackBuffer);
+    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
+    pBackBuffer->Release();
+
+    if (!g_Config.IsFullscreen) {
+        RECT rc = { 0, 0, g_Config.Width, g_Config.Height };
+        AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+        SetWindowPos(hWnd, nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+    }
+    g_Config.NeedsResize = false;
+}
+
 // 메세지 처리 함수
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (message == WM_DESTROY) {
@@ -274,6 +299,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     comp->Input();
                 }
             }
+
+            // F키 전체화면 토글
+            static bool fWasPressed = false;
+            bool fIsPressed = (GetAsyncKeyState('F') & 0x8000);
+            if (fIsPressed && !fWasPressed) {
+                g_Config.IsFullscreen = !g_Config.IsFullscreen;
+                g_pSwapChain->SetFullscreenState(g_Config.IsFullscreen, nullptr);
+            }
+            fWasPressed = fIsPressed;
 
             // 2. update
             for (auto obj : g_GameWorld) {
