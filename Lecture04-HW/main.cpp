@@ -16,11 +16,48 @@ ID3D11Device* g_pd3dDevice = nullptr;
 ID3D11DeviceContext* g_pImmediateContext = nullptr;
 IDXGISwapChain* g_pSwapChain = nullptr;
 ID3D11RenderTargetView* g_pRenderTargetView = nullptr;
+std::vector<GameObject*> g_GameWorld;
 
 struct VideoConfig {
     int Width = 800;
     int Height = 600;
 } g_Config;
+
+class Component {
+public:
+    class GameObject* pOwner = nullptr;
+    bool isStarted = false;
+
+    virtual void Start() = 0;
+    virtual void Input() {}
+    virtual void Update(float dt) = 0;
+    virtual void Render() {}
+    virtual ~Component() {}
+};
+
+class GameObject {
+public:
+    std::string name;
+    std::vector<Component*> components;
+    float x = 0.0f;
+    float y = 0.0f;
+
+    GameObject(std::string n, float startX = 0.0f, float startY = 0.0f)
+        : name(n), x(startX), y(startY) {
+    }
+
+    ~GameObject() {
+        for (auto comp : components) {
+            delete comp;
+        }
+    }
+
+    void AddComponent(Component* pComp) {
+        pComp->pOwner = this;
+        pComp->isStarted = false;
+        components.push_back(pComp);
+    }
+};
 
 // 메세지 처리 함수
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
