@@ -69,12 +69,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
     pBackBuffer->Release();
 
-    // 메세지 루프
+    // 게임 루프
     MSG msg = { 0 };
     while (WM_QUIT != msg.message) {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+        }
+        else {
+            // 렌더링
+            float clearColor[] = { 0.1f, 0.2f, 0.3f, 1.0f };
+            g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, clearColor);
+
+            D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)g_Config.Width, (float)g_Config.Height, 0.0f, 1.0f };
+            g_pImmediateContext->RSSetViewports(1, &vp);
+            g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
+
+            g_pSwapChain->Present(1, 0);
         }
     }
 
