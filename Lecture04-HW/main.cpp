@@ -122,13 +122,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             deltaTime = std::chrono::duration<float>(currentTime - prevTime).count();
             prevTime = currentTime;
 
-            // 렌더링
+            // 1. input
+            if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) PostQuitMessage(0);
+
+            for (auto obj : g_GameWorld) {
+                for (auto comp : obj->components) {
+                    comp->Input();
+                }
+            }
+
+            // 2. update
+            for (auto obj : g_GameWorld) {
+                for (auto comp : obj->components) {
+                    if (!comp->isStarted) {
+                        comp->Start();
+                        comp->isStarted = true;
+                    }
+                    comp->Update(deltaTime);
+                }
+            }
+
+            // 3. render
             float clearColor[] = { 0.1f, 0.2f, 0.3f, 1.0f };
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, clearColor);
 
             D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)g_Config.Width, (float)g_Config.Height, 0.0f, 1.0f };
             g_pImmediateContext->RSSetViewports(1, &vp);
             g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, nullptr);
+
+            for (auto obj : g_GameWorld) {
+                for (auto comp : obj->components) {
+                    comp->Render();
+                }
+            }
 
             g_pSwapChain->Present(1, 0);
         }
