@@ -2,16 +2,21 @@
 #include <windows.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include <directxmath.h>
 #include <iostream>
-#include <DirectXMath.h>
-
-
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 
-// [비디오 설정 관리 구조체]
+using namespace DirectX;
+
+struct ConstantData {
+    XMFLOAT2 offset;
+    float rotation; 
+    
+};
+
 struct VideoConfig {
     int Width = 800;
     int Height = 600;
@@ -20,7 +25,6 @@ struct VideoConfig {
     int VSync = 1;
 } g_Config;
 
-// 전역 변수
 ID3D11Device* g_pd3dDevice = nullptr;
 ID3D11DeviceContext* g_pImmediateContext = nullptr;
 IDXGISwapChain* g_pSwapChain = nullptr;
@@ -29,28 +33,22 @@ ID3D11VertexShader* g_pVertexShader = nullptr;
 ID3D11PixelShader* g_pPixelShader = nullptr;
 ID3D11InputLayout* g_pInputLayout = nullptr;
 ID3D11Buffer* g_pVertexBuffer = nullptr;
-ID3D11Buffer* g_pConstantBuffer = nullptr; // 셰이더로 데이터를 보낼 상수 버퍼 추가
+ID3D11Buffer* g_pConstantBuffer = nullptr;
 
 struct Vertex {
     float x, y, z;
     float r, g, b, a;
 };
 
-// [상수 버퍼 구조체: 16바이트 정렬 필수]
-struct CB_Transform {
-    float angle;         // 회전 각도 (라디안)
-    float colorModifier; // -1.0(검정) ~ 0.0(기본) ~ 1.0(흰색)
-    float padding[2];    // 16바이트 패딩
-};
+XMFLOAT2 g_CurOffset = { 0.0f, 0.0f };
+float g_CurRotation = 0.0f; 
 
-// --- [해상도 및 리소스 재구성 함수] ---
-void RebuildVideoResources(HWND hWnd) {
-    if (!g_pSwapChain) return;
-
-    if (g_pRenderTargetView) {
+void RebuildVideoResources(HWND hWnd) 
+{
+    if (!g_pSwapChain) 
+        return;
+    if (g_pRenderTargetView) 
         g_pRenderTargetView->Release();
-        g_pRenderTargetView = nullptr;
-    }
 
     g_pSwapChain->ResizeBuffers(0, g_Config.Width, g_Config.Height, DXGI_FORMAT_UNKNOWN, 0);
 
@@ -59,33 +57,36 @@ void RebuildVideoResources(HWND hWnd) {
     g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_pRenderTargetView);
     pBackBuffer->Release();
 
-    if (!g_Config.IsFullscreen) {
+    if (!g_Config.IsFullscreen) 
+    {
         RECT rc = { 0, 0, g_Config.Width, g_Config.Height };
         AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
         SetWindowPos(hWnd, nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     }
-
     g_Config.NeedsResize = false;
-    printf("[Video] Changed: %d x %d\n", g_Config.Width, g_Config.Height);
-
-    
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (message == WM_DESTROY) { PostQuitMessage(0); return 0; }
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
+{
+    if (message == WM_DESTROY) 
+    { 
+        PostQuitMessage(0); 
+        return 0; 
+    }
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+{
     WNDCLASSEXW wcex = { sizeof(WNDCLASSEX) };
     wcex.lpfnWndProc = WndProc;
     wcex.hInstance = hInstance;
-    wcex.lpszClassName = L"DX11VideoClass";
+    wcex.lpszClassName = L"DX11MoveRotateClass";
     RegisterClassExW(&wcex);
 
     RECT rc = { 0, 0, g_Config.Width, g_Config.Height };
     AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-    HWND hWnd = CreateWindowW(L"DX11VideoClass", L"Left/Right: Rotate | F: Fullscreen",
+    HWND hWnd = CreateWindowW(L"DX11MoveRotateClass", L"Arrows: Move | A, D: Rotate",
         WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance, nullptr);
     ShowWindow(hWnd, nCmdShow);
 
@@ -104,63 +105,47 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     RebuildVideoResources(hWnd);
 
-    // [셰이더 소스코드]
     const char* shaderSource = R"(
-        // C++에서 받아오는 상수 버퍼 데이터
-        cbuffer TransformBuffer : register(b0)
+        cbuffer MoveBuffer : register(b0)
         {
-            float angle;
-            float colorModifier;
-            float2 padding;
+            float2 g_Offset;
+            float g_Rotation;
+            //float g_Padding;
         };
 
-        struct VS_INPUT
+        struct VS_INPUT 
         {
             float3 pos : POSITION;
             float4 col : COLOR;
         };
 
-        struct PS_INPUT
+        struct PS_INPUT 
         {
             float4 pos : SV_POSITION;
             float4 col : COLOR;
         };
 
-        PS_INPUT VS_Main(VS_INPUT input)
+        PS_INPUT VS_Main(VS_INPUT input) 
         {
             PS_INPUT output;
-
-            // 1. 회전 행렬(Rotation Matrix) 구성
-            float c = cos(angle);
-            float s = sin(angle);
             
-            // 2D 회전 행렬 (HLSL은 기본적으로 벡터-행렬 곱에서 이 형태 사용)
-            float2x2 rotMatrix = float2x2(
-                c, -s,
-                s,  c
-            );
-
-            // 2. 셰이더 안에서 정점 좌표에 행렬을 곱하여 회전시킴
-            float2 rotatedXY = mul(rotMatrix, input.pos.xy);
-            output.pos = float4(rotatedXY, input.pos.z, 1.0f);
-
-            // 3. 방향에 따른 색상 보간 계산
-            float3 finalColor = input.col.rgb;
-            if (colorModifier > 0.0f) {
-                // 우회전: 양수 값이면 흰색(1,1,1)으로 서서히 보간 (Lerp)
-                finalColor = lerp(input.col.rgb, float3(1.0f, 1.0f, 1.0f), colorModifier);
-            } else {
-                // 좌회전: 음수 값이면 검정색(0,0,0)으로 서서히 보간
-                // (-colorModifier를 해서 양수 비율로 맞춰줌)
-                finalColor = lerp(input.col.rgb, float3(0.0f, 0.0f, 0.0f), -colorModifier);
-            }
+            float s = sin(g_Rotation);
+            float c = cos(g_Rotation);
             
-            output.col = float4(finalColor, input.col.a);
+            float3 rotPos = input.pos;
+            rotPos.x = input.pos.x * c + input.pos.y * s;
+            rotPos.y = input.pos.x * s + input.pos.y * c;
 
+            float3 finalPos = rotPos;
+            finalPos.x -= g_Offset.x;
+            finalPos.y -= g_Offset.y;
+
+            output.pos = float4(finalPos, 1.0f);
+            output.col = input.col;
             return output;
         }
 
-        float4 PS_Main(PS_INPUT input) : SV_Target
+        float4 PS_Main(PS_INPUT input) : SV_Target 
         {
             return input.col;
         }
@@ -179,60 +164,50 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_pd3dDevice->CreateInputLayout(layout, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &g_pInputLayout);
     vsBlob->Release(); psBlob->Release();
 
-    // 삼각형 버퍼 생성
     Vertex vertices[] = {
-        {  0.0f,  0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
-        {  0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
-        { -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
+        {  0.0f,  0.3f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f },
+        {  0.3f, -0.3f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f },
+        { -0.3f, -0.3f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f },
     };
     D3D11_BUFFER_DESC bd = { sizeof(vertices), D3D11_USAGE_DEFAULT, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
     D3D11_SUBRESOURCE_DATA initData = { vertices, 0, 0 };
     g_pd3dDevice->CreateBuffer(&bd, &initData, &g_pVertexBuffer);
 
-    // [상수 버퍼 생성]
-    D3D11_BUFFER_DESC cbDesc = {};
-    cbDesc.Usage = D3D11_USAGE_DEFAULT;
-    cbDesc.ByteWidth = sizeof(CB_Transform);
-    cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    g_pd3dDevice->CreateBuffer(&cbDesc, nullptr, &g_pConstantBuffer);
+    D3D11_BUFFER_DESC cbd = { 0 };
+    cbd.Usage = D3D11_USAGE_DEFAULT;
+    cbd.ByteWidth = sizeof(ConstantData);
+    cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    g_pd3dDevice->CreateBuffer(&cbd, nullptr, &g_pConstantBuffer);
 
-    float totalAngle = 0.0f; // 누적 각도
-
-    // --- [게임 루프] ---
     MSG msg = { 0 };
-    while (WM_QUIT != msg.message) {
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+    while (WM_QUIT != msg.message) 
+    {
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) 
+        {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
-        else {
-            if (GetAsyncKeyState('F') & 0x0001) {
-                g_Config.IsFullscreen = !g_Config.IsFullscreen;
-                g_pSwapChain->SetFullscreenState(g_Config.IsFullscreen, nullptr);
-            }
+        else 
+        {
+            float moveSpeed = 0.005f;
+            float rotSpeed = 0.02f;
 
-            // [방향키 연속 입력 처리] 0x8000 플래그로 꾹 누름 감지
-            if (GetAsyncKeyState(VK_LEFT) & 0x8000) { totalAngle -= 0.015f; }
-            if (GetAsyncKeyState(VK_RIGHT) & 0x8000) { totalAngle += 0.015f; }
+            if (GetAsyncKeyState(VK_LEFT))  g_CurOffset.x -= moveSpeed;
+            if (GetAsyncKeyState(VK_RIGHT)) g_CurOffset.x += moveSpeed;
+            if (GetAsyncKeyState(VK_UP))    g_CurOffset.y += moveSpeed;
+            if (GetAsyncKeyState(VK_DOWN))  g_CurOffset.y -= moveSpeed;
+
+            if (GetAsyncKeyState('A')) g_CurRotation += rotSpeed;
+            if (GetAsyncKeyState('D')) g_CurRotation -= rotSpeed;
 
             if (g_Config.NeedsResize) RebuildVideoResources(hWnd);
 
-            // [상수 버퍼 업데이트]
-            CB_Transform cb;
-            cb.angle = totalAngle;
-
-            // 360도(약 6.28 라디안) 기준으로 -1.0(완전 까맣게) ~ 1.0(완전 하얗게) 비율을 만듦
-            float colorMod = totalAngle / 6.283185f;
-            if (colorMod > 1.0f) colorMod = 1.0f;
-            if (colorMod < -1.0f) colorMod = -1.0f;
-            cb.colorModifier = colorMod;
-
-            // GPU 메모리에 밀어넣기
-            g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-
-            // [렌더링]
             float clearColor[] = { 0.1f, 0.2f, 0.3f, 1.0f };
             g_pImmediateContext->ClearRenderTargetView(g_pRenderTargetView, clearColor);
+
+            ConstantData cbData = { g_CurOffset, g_CurRotation };
+            g_pImmediateContext->UpdateSubresource(g_pConstantBuffer, 0, nullptr, &cbData, 0, 0);
+            g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pConstantBuffer);
 
             D3D11_VIEWPORT vp = { 0.0f, 0.0f, (float)g_Config.Width, (float)g_Config.Height, 0.0f, 1.0f };
             g_pImmediateContext->RSSetViewports(1, &vp);
@@ -242,19 +217,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             g_pImmediateContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
             g_pImmediateContext->IASetInputLayout(g_pInputLayout);
             g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-            // 파이프라인에 셰이더와 데이터 바인딩
             g_pImmediateContext->VSSetShader(g_pVertexShader, nullptr, 0);
-            g_pImmediateContext->VSSetConstantBuffers(0, 1, &g_pConstantBuffer); // 상수 버퍼 연결
             g_pImmediateContext->PSSetShader(g_pPixelShader, nullptr, 0);
-
             g_pImmediateContext->Draw(3, 0);
+
             g_pSwapChain->Present(g_Config.VSync, 0);
         }
     }
 
-    // [정리]
-    if (g_pConstantBuffer) g_pConstantBuffer->Release(); // 새로 만든 리소스 해제
+    if (g_pConstantBuffer) g_pConstantBuffer->Release();
     if (g_pVertexBuffer) g_pVertexBuffer->Release();
     if (g_pInputLayout) g_pInputLayout->Release();
     if (g_pVertexShader) g_pVertexShader->Release();

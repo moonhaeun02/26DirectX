@@ -6,8 +6,8 @@
 // pragma comment : 특정 데이터나 주석을 목적 파일(Object file)이나 실행 파일(Executable)에 삽입하라는 구체적인 명령임.
 
 #pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console") // 하위 시스템을 콘솔로 설정하고, 진입점은 WinMain으로 강제 지정
-//#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:windows") // 하위 시스템을 윈도우로 설정하고, 진입점은 WinMain으로 강제 지정
-//#pragma comment(linker, "/subsystem:console")
+//#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:windows") // 하위 시스템을 윈도우로 설정하고, 진입점은 WinMain으로 강제 지정 (콘솔 없이 윈도우 창만 존재)
+//#pragma comment(linker, "/subsystem:console") (콘솔만 존재)
 
 
 //#pragma comment(lib, "d3d11.lib"))  // 외부 라이브러리 사용
@@ -32,12 +32,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 // 2. WinMain: 프로그램의 진입점 (Entry Point)
+// 현재 실행 중인 프로그램의 '인스턴스 핸들(ID), 이전에 실행된 똑같은 프로그램의 인스턴스 핸들(현재 사용 안하는 문법, 항상 NULL), 명령행 인자, 창 출력 모드
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // --- (A) 윈도우 클래스 등록 ---
     // 생성할 창의 속성(아이콘, 커서, 배경색, 메시지 처리 함수 등)을 정의함.
-    WNDCLASSEXW wcex = {};
-    wcex.cbSize = sizeof(WNDCLASSEX);
+    WNDCLASSEXW wcex = {}; // WND(Window) + CLASS(클래스) + EX(Extended) + W(Unicode/Wide)
+    wcex.cbSize = sizeof(WNDCLASSEX); // cb(Count of Bytes) // 이 구조체의 전체 크기가 몇 바이트인지 알려줌
     wcex.style = CS_HREDRAW | CS_VREDRAW;           // 가로/세로 크기 변경 시 다시 그리기
     wcex.lpfnWndProc = WndProc;                     // 메시지 처리 함수 연결
     wcex.hInstance = hInstance;                     // 현재 프로그램 인스턴스 핸들
@@ -45,7 +46,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);  // 창 배경색 설정
     wcex.lpszClassName = L"DirectXWindowClass";      // 클래스 고유 이름
 
-    RegisterClassExW(&wcex);
+    RegisterClassExW(&wcex); // 클래스(윈도우 설계도) 등록, 설계도 주소를 전달 (&)
 
     // --- (B) 윈도우 생성 ---
     // 실제 화면에 표시될 윈도우 객체를 생성함.
@@ -58,7 +59,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         nullptr, nullptr, hInstance, nullptr
     );
 
-    if (!hWnd) return FALSE;
+    if (!hWnd) return FALSE; // "혹시라도 창 만들기에 실패해서 번호표(hWnd)를 못 받았다면, 프로그램을 그냥 꺼버려!"
 
     // 생성된 창을 화면에 표시하고 업데이트함.
     ShowWindow(hWnd, nCmdShow);
