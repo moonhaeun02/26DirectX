@@ -3,8 +3,8 @@
  * [윈도우 입력 시스템과 OS I/O 모델]
  * ==============================================================================
  * 1. GetKeyState vs GetAsyncKeyState
- * - GetKeyState: '메시지 큐' 기반. 윈도우 메시지가 처리된 시점의 키 상태를 가져옴. (동기적)
- * - GetAsyncKeyState: 메시지 큐 무시. 호출한 '이 순간' 하드웨어의 실제 상태를 찌름. (비동기적)
+ * - GetKeyState: '메시지 큐' 기반. 윈도우 메시지가 처리된 시점의 키 상태를 가져옴. (동기적) (정확한 순서 보장, 일관성)
+ * - GetAsyncKeyState: 메시지 큐 무시. 호출한 '이 순간' 하드웨어의 실제 상태를 찌름. (비동기적) (지연 시간 없음, 즉각성)
  * - 게임 엔진에서는 인풋 렉을 최소화하기 위해 'Async' 버전을 선호함.
  * 
  * 2. 왜 0x8000 (1000 0000 0000 0000) 인가?
@@ -73,7 +73,7 @@ int main() {
 
         // 3. [Rendering - Console version]
         // 화면을 지우고 좌표에 플레이어(*) 출력 (실제 엔진의 Render 단계)
-        system("cls");
+        system("cls"); // Clear Screen
         printf("Player Info: X:%.1f, Y:%.1f\n", player.x, player.y);
         printf("Raw 'A' State: 0x%04X\n", (unsigned short)GetAsyncKeyState('A'));
 

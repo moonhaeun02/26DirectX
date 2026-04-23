@@ -21,10 +21,9 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{3b4be947-9fe0-4cf8-997b-4c7154dbf20c}</ProjectGuid>
-    <RootNamespace>Lecture05ShaderCompile</RootNamespace>
+    <ProjectGuid>{D17055BF-8766-49C6-BA0A-C1915B6CEBFB}</ProjectGuid>
+    <RootNamespace>Lecture02HW</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Lecture05-ShaderCompile</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -127,6 +126,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="HW.md" />
+  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
   </ItemGroup>

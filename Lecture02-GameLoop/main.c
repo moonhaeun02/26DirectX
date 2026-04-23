@@ -87,6 +87,7 @@ typedef struct {
     int isRunning;
     char currentInput;
 } GameContext;
+// typedef를 통해 구조체에 GameContext라는 별칭을 부여함.
 
 // --- 1. 입력 단계 (Process Input) ---
 // 정석: "무슨 일이 일어났는지"만 기록함.
